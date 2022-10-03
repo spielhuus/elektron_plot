@@ -1,7 +1,7 @@
 use super::cairo_plotter::{Circle, Line, LineCap, PlotItem, Text};
 use super::theme::{Theme, Themer, ThemerMerge};
 use crate::text;
-use elektron_sexp::{model::{PcbElements, Stroke}, pcb::Pcb, shape::{Shape, Transform}};
+use elektron_sexp::{PcbElements, Stroke, Pcb, Shape, Transform};
 use ndarray::arr2;
 
 macro_rules! theme {
@@ -69,7 +69,7 @@ where
                     let mut graphics = Vec::new();
                     for graphic in &footprint.graphics {
                         match graphic {
-                            elektron_sexp::model::Graphics::FpText(text) => {
+                            elektron_sexp::Graphics::FpText(text) => {
                                 if !text.hidden {
                                     let effects = Themer::get(
                                         &text.effects,
@@ -83,7 +83,7 @@ where
                                     ));
                                 }
                             }
-                            elektron_sexp::model::Graphics::FpLine(line) => {
+                            elektron_sexp::Graphics::FpLine(line) => {
                                 let stroke = theme!(self, line);
                                 graphics.push(PlotItem::Line(
                                     10,
@@ -102,7 +102,7 @@ where
                                     ),
                                 ));
                             }
-                            elektron_sexp::model::Graphics::FpCircle(circle) => {
+                            elektron_sexp::Graphics::FpCircle(circle) => {
                                 let stroke = theme!(self, circle);
                                 graphics.push(PlotItem::Circle(
                                     1,
@@ -118,7 +118,7 @@ where
                                     ),
                                 ));
                             }
-                            elektron_sexp::model::Graphics::FpArc(_) => {}
+                            elektron_sexp::Graphics::FpArc(_) => {}
                         }
                     }
                     return Some(graphics);

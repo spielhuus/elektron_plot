@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
 use crate::error::Error;
-use elektron_sexp::model::{color, Effects, Stroke};
+use elektron_sexp::{color, Effects, Stroke};
 use elektron_sexp::parser::{SexpParser, State};
-
 #[derive(Debug)]
 enum ThemeItems {
     Effects(Effects),

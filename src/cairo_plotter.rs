@@ -7,7 +7,7 @@ extern crate cairo;
 use cairo::{Context, FontFace, FontSlant, FontWeight, Format, ImageSurface, SvgSurface};
 
 use super::{border::draw_border, Theme};
-use elektron_sexp::model::TitleBlock;
+use elektron_sexp::TitleBlock;
 pub mod paper {
     pub const A4: (f64, f64) = (297.0, 210.0);
 }

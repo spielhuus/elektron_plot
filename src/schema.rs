@@ -5,8 +5,7 @@ use super::cairo_plotter::{Circle, Line, LineCap, PlotItem, Text};
 use super::theme::{Theme, Themer, ThemerMerge};
 use crate::cairo_plotter::{Arc, Polyline, Rectangle};
 use crate::text;
-use elektron_sexp::model::{Graph, SchemaElement, TitleBlock};
-use elektron_sexp::{schema::Schema, shape::{Shape, Transform}};
+use elektron_sexp::{Graph, SchemaElement, TitleBlock, Schema, Shape, Transform};
 
 macro_rules! get_effects {
     ($orig:expr, $theme:expr) => {
@@ -533,7 +532,7 @@ impl<T, I: Iterator<Item = T>> PlotIterator<T> for I {}
 
 #[cfg(test)]
 mod tests {
-    use elektron_sexp::schema::Schema;
+    use elektron_sexp::Schema;
     use std::path::Path;
 
     /* #[test]

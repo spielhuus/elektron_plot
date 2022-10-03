@@ -1,7 +1,7 @@
 use super::cairo_plotter::{Line, LineCap, PlotItem, Rectangle, Text};
 use super::{text, Theme};
 use crate::error::Error;
-use elektron_sexp::model::{Effects, Stroke, TitleBlock};
+use elektron_sexp::{Effects, Stroke, TitleBlock};
 use ndarray::{arr1, arr2, Array2};
 
 const BORDER_RASTER: i32 = 60;
