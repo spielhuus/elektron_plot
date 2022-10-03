@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install native dependencies
+        run: |
+            sudo apt-get install -y -qq libcairo2 libcairo2-dev libpango-1.0-0 libpango1.0-dev
       - uses: actions/checkout@v2
       - name: Build
         run: cargo build --verbose
