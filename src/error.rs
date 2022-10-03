@@ -44,3 +44,8 @@ impl std::convert::From<cairo::IoError> for Error {
         Error::IoError(err.to_string())
     }
 }
+impl std::convert::From<elektron_sexp::Error> for Error {
+    fn from(err: elektron_sexp::Error) -> Self {
+        Error::IoError(err.to_string())
+    }
+}
