@@ -1,6 +1,6 @@
 [package]
 name = "elektron_plot"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 description = "plot elektron schema and pcb data."
 license = "MIT OR Apache-2.0"
@@ -9,16 +9,16 @@ license = "MIT OR Apache-2.0"
 name = "elektron_plot"
 
 [dependencies]
-thiserror = "1.0.32"
+thiserror = "1.0.37"
 lazy_static = "1.4.0"
 regex = "1.6.0"
 rust-fuzzy-search = "0.1.1"
-ndarray = "0.15.4"
-itertools = "0.10.3"
+ndarray = "0.15.6"
+itertools = "0.10.5"
 json = "0.12.4"
-png = "0.17.5"
+png = "0.17.6"
 svg = "0.10.0"
 pdf = "0.7.2"
-cairo-rs = { version = "0.15.11", features = ["svg", "png", "pdf"] }
+cairo-rs = { version = "0.15.12", features = ["svg", "png", "pdf"] }
 pangocairo = "0.15.1"
 elektron_sexp = "0.1.6"
