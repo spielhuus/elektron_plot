@@ -182,9 +182,7 @@ impl Theme {
         }
     }
     pub fn color(&self, name: &str) -> Option<(f64, f64, f64, f64)> {
-        println!("get color: {}", name);
         if let Some(ThemeItems::Color(color)) = &self.items.get(name) {
-            println!("found color: {:?}", color);
             Some(*color)
         } else {
             None
