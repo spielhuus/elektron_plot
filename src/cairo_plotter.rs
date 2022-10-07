@@ -1,13 +1,15 @@
 use crate::error::Error;
 use itertools::Itertools;
 use ndarray::{arr1, arr2, s, Array1, Array2};
-use pangocairo::{create_layout, pango::{ffi::pango_font_description_from_string, FontDescription, Weight, SCALE}, show_layout, update_layout};
+use pangocairo::{create_layout, pango::SCALE, show_layout, update_layout};
 use std::io::Write;
 extern crate cairo;
 use cairo::{Context, FontFace, FontSlant, FontWeight, Format, ImageSurface, SvgSurface};
 
-use super::{border::draw_border, Theme};
-use elektron_sexp::TitleBlock;
+fn rgba_color(color: (f64, f64, f64, f64)) -> String {
+    format!("#{:02X}{:02X}{:02X}{:02X}", (color.0*255.0) as u32, (color.1*255.0) as u32, (color.2*255.0) as u32, (color.3*255.0) as u32)
+}
+
 pub mod paper {
     pub const A4: (f64, f64) = (297.0, 210.0);
 }
@@ -166,6 +168,7 @@ impl Polyline {
         }
     }
 }
+
 #[derive(Debug)]
 pub struct Text {
     pub pos: Array1<f64>,
@@ -175,6 +178,7 @@ pub struct Text {
     pub font: String,
     pub align: Vec<String>,
     pub angle: f64,
+    pub label: bool,
 }
 impl Text {
     pub fn new(
@@ -185,6 +189,7 @@ impl Text {
         fontsize: f64,
         font: &str,
         align: Vec<String>,
+        label: bool,
     ) -> Text {
         Text {
             pos,
@@ -194,6 +199,7 @@ impl Text {
             font: font.to_string(),
             align,
             angle,
+            label,
         }
     }
 }
@@ -482,12 +488,6 @@ impl<'a> Plotter for CairoPlotter<'a> {
             .for_each(|item| {
                 //for item in &self.items {
                 match item {
-                    /* PlotItem::TitleBlock(title_block) => {
-                        for item in
-                            draw_border(Some(title_block), self.paper_size, &Theme::kicad_2000())
-                                .unwrap()
-                        {}
-                    } //TODO: }, */
                     PlotItem::Line(_, line) => {
                         stroke!(context, line);
                         match line.linecap {
@@ -544,56 +544,86 @@ impl<'a> Plotter for CairoPlotter<'a> {
                         context.save().unwrap();
                         let layout = create_layout(&self.context);
                         if let Some(layout) = layout {
-                            let markup = format!("<span face=\"{}\" foreground=\"blue\" size=\"{}\">{}</span>", 
-                                text.font, (text.fontsize * 1024.0) as i32, text.text);
+                            let markup = format!("<span face=\"{}\" foreground=\"{}\" size=\"{}\">{}</span>", 
+                                text.font, rgba_color(text.color), (text.fontsize * 1024.0) as i32, text.text);
                             layout.set_markup(markup.as_str());
-                            context.rotate(-text.angle * std::f64::consts::PI / 180.0);
-                            context.set_source_rgba(0.0, 0.0, 0.0, 1.0);
                             update_layout(context, &layout);
 
                             let outline: (i32, i32) = layout.size();
                             let outline = (outline.0 as f64 / SCALE as f64, outline.1 as f64 / SCALE as f64);
                             let mut x = text.pos[0];
                             let mut y = text.pos[1];
-                            if text.angle == 0.0 {
-                                if text.align.contains(&String::from("right")) {
-                                    x -= outline.0 as f64;
-                                } else if !text.align.contains(&String::from("left")) {
-                                    x -= outline.0 as f64 / 2.0;
+
+                            if !text.label {
+                                if text.angle == 0.0 || text.angle == 360.0 {
+                                    if text.align.contains(&String::from("right")) {
+                                        x -= outline.0 as f64;
+                                    } else if !text.align.contains(&String::from("left")) {
+                                        x -= outline.0 as f64 / 2.0;
+                                    }
+                                    if text.align.contains(&String::from("bottom")) {
+                                        y -= outline.1 as f64;
+                                    } else if !text.align.contains(&String::from("top")) {
+                                        y -= outline.1 as f64 / 2.0;
+                                    }
+                                } else if text.angle == 90.0 || text.angle == 270.0 {
+                                    if text.align.contains(&String::from("right")) {
+                                        y += outline.0 as f64;
+                                    } else if !text.align.contains(&String::from("left")) {
+                                        y += outline.0 as f64 / 2.0;
+                                    }
+                                    if text.align.contains(&String::from("bottom")) {
+                                        x -= outline.1 as f64;
+                                    } else if !text.align.contains(&String::from("top")) {
+                                        x -= outline.1 as f64 / 2.0;
+                                    }
+                                } else {
+                                    println!("text angle is: {} ({})", text.angle, text.text);
                                 }
-                                if text.align.contains(&String::from("bottom")) {
-                                    y -= outline.1 as f64;
-                                } else if !text.align.contains(&String::from("top")) {
-                                    y -= outline.1 as f64 / 2.0;
-                                }
-                            } else if text.angle == 90.0 {
-                                if text.align.contains(&String::from("right")) {
-                                    y += outline.0 as f64;
-                                } else if !text.align.contains(&String::from("left")) {
-                                    y += outline.0 as f64 / 2.0;
-                                }
-                                if text.align.contains(&String::from("top")) {
-                                    x -= outline.1 as f64;
-                                } else if !text.align.contains(&String::from("bottom")) {
-                                    x -= outline.1 as f64 / 2.0;
-                                }
+                                context.move_to(x, y);
+                                let angle = if text.angle > 180.0 {
+                                    text.angle - 180.0 
+                                } else { text.angle };
+                                context.rotate(-angle * std::f64::consts::PI / 180.0);
+                                show_layout(context, &layout);
+                                context.stroke().unwrap();
                             } else {
-                                println!("text angle is: {} ({})", text.angle, text.text);
+                                let label_left = 0.4;
+                                let label_up = 0.1;
+                                let contur = arr2(&[
+                                    [0.0, 0.], 
+                                    [2.0*label_left, -outline.1/2.0 - label_up],
+                                    [3.0*label_left + outline.0, -outline.1/2.0 - label_up],
+                                    [3.0*label_left + outline.0, outline.1/2.0 + label_up],
+                                    [2.0*label_left, outline.1/2.0 + label_up],
+                                    [0.0, 0.0]
+                                ]);
+                                let theta = -text.angle.to_radians();
+                                let rot = arr2(&[[theta.cos(), -theta.sin()], [theta.sin(), theta.cos()]]);
+                                let verts: Array2<f64> = contur.dot(&rot);
+                                let verts = &text.pos + verts;
+                                context.move_to(text.pos[0], text.pos[1]);
+                                for row in verts.rows() {
+                                    context.line_to(row[0], row[1]);
+                                }
+                                context.stroke().unwrap();
+
+                                //adjust the text
+                                if text.angle == 0.0 {
+                                    x += 2.0*label_left;
+                                    y -= outline.1 / 2.0;
+                                } else if text.angle == 180.0 {
+                                    x -= 2.0*label_left + outline.0;
+                                    y -= outline.1 / 2.0;
+                                } //TODO 90, 270
+                                context.move_to(x, y);
+                                let angle = if text.angle >= 180.0 {
+                                    text.angle - 180.0 
+                                } else { text.angle };
+                                context.rotate(-angle * std::f64::consts::PI / 180.0);
+                                show_layout(context, &layout);
+                                context.stroke().unwrap();
                             }
-
-                            context.move_to(x, y);
-                            show_layout(context, &layout);
-                            context.stroke().unwrap();
-
-                            /* context.move_to(text.pos[0], text.pos[1]);
-                            context.line_to(text.pos[0] + outline.0 as f64, text.pos[1]);
-                            context.line_to(text.pos[0] + outline.0 as f64, text.pos[1] + outline.1 as f64);
-                            context.line_to(text.pos[0], text.pos[1] + outline.1 as f64);
-                            context.line_to(text.pos[0], text.pos[1]);
-                            context.arc(text.pos[0], text.pos[1], 1.0, 0., 10.); */
-
-                            context.stroke().unwrap();
-
 
                         } else {
                             panic!("can not get pangocairo layout");
@@ -602,5 +632,17 @@ impl<'a> Plotter for CairoPlotter<'a> {
                     }
                 }
             });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cairo_plotter::rgba_color;
+
+
+    #[test]
+    fn convert_color() {
+        assert_eq!("#000000FF", rgba_color((0.0, 0.0, 0.0, 1.0)));
+        assert_eq!("#FFFFFFFF", rgba_color((1.0, 1.0, 1.0, 1.0)));
     }
 }

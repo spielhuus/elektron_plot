@@ -24,6 +24,7 @@ macro_rules! text {
                 $effects.font_size.0,
                 $effects.font.as_str(),
                 $effects.justify.clone(),
+                false,
             ),
         )
     };

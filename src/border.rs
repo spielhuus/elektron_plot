@@ -96,7 +96,7 @@ pub fn draw_border(
             None,
         ),
     ));
-    plotter.push(PlotItem::Line(
+    /* plotter.push(PlotItem::Line(
         99,
         Line::new(
             arr2(&[
@@ -108,7 +108,7 @@ pub fn draw_border(
             LineCap::Butt,
             stroke.color,
         ),
-    ));
+    )); */
     plotter.push(PlotItem::Line(
         99,
         Line::new(
@@ -137,46 +137,43 @@ pub fn draw_border(
     ));
 
     if let Some(title_block) = title_block {
-        let left = paper_size.0 - 118.0;
+        let left = paper_size.0 - 117.0;
         let effects: Effects = theme.effects("subtitle_effects").unwrap();
         for (key, comment) in &title_block.comment {
             if *key == 1 {
                 plotter.push(text!(
-                    arr1(&[left, paper_size.1 - 30.0]),
+                    arr1(&[left, paper_size.1 - 25.0]),
                     0.0,
                     comment.to_string(),
                     effects
                 ));
             } else if *key == 2 {
                 plotter.push(text!(
-                    arr1(&[left, paper_size.1 - 35.0]),
+                    arr1(&[left, paper_size.1 - 29.0]),
                     0.0,
                     comment.to_string(),
                     effects
                 ));
             } else if *key == 3 {
                 plotter.push(text!(
-                    arr1(&[left, paper_size.1 - 40.0]),
+                    arr1(&[left, paper_size.1 - 33.0]),
                     0.0,
                     comment.to_string(),
                     effects
                 ));
             } else if *key == 4 {
                 plotter.push(text!(
-                    arr1(&[left, paper_size.1 - 45.0]),
+                    arr1(&[left, paper_size.1 - 37.0]),
                     0.0,
                     comment.to_string(),
                     effects
                 ));
             }
         }
-        /* let effects: Effects = style.schema_title_effects();
-        let title: String = get!(node, "title", 0);
-        plotter.push(text!(arr1(&[left, paper_size.1 - 15.0]), 0.0, title, effects)); */
         if !title_block.company.is_empty() {
             let effects: Effects = theme.effects("title_effects").unwrap();
             plotter.push(text!(
-                arr1(&[left, paper_size.1 - 25.0]),
+                arr1(&[left, paper_size.1 - 21.0]),
                 0.0,
                 title_block.company.clone(),
                 effects

@@ -34,7 +34,7 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if self.border {
             self.border = false;
-                return Some(draw_border(&self.title_block, self.paper_size, self.theme).unwrap());
+                return Some(draw_border(self.title_block, self.paper_size, self.theme).unwrap());
         }
         loop {
             match self.iter.next() {
@@ -57,6 +57,7 @@ where
                                 effects.font_size.0,
                                 effects.font.as_str(),
                                 effects.justify,
+                                false,
                             ),
                         ),
                         PlotItem::Rectangle(
@@ -155,6 +156,7 @@ where
                             effects.font_size.0,
                             effects.font.as_str(),
                             effects.justify,
+                            false,
                         ),
                     )]);
                 }
@@ -207,7 +209,6 @@ where
                     let pos: Array1<f64> = label.at.clone();
                     let mut angle: f64 = label.angle;
                     if angle >= 180.0 {
-                        //dont know why this is possible
                         angle -= 180.0;
                     }
                     return Some(vec![PlotItem::Text(
@@ -220,15 +221,15 @@ where
                             effects.font_size.0,
                             effects.font.as_str(),
                             effects.justify,
+                            false,
                         ),
                     )]);
                 }
                 Some(SchemaElement::GlobalLabel(label)) => {
-                    let effects = self.theme.effects("label").unwrap();
+                    let effects = self.theme.effects("global_label").unwrap();
                     let pos: Array1<f64> = label.at.clone();
                     let mut angle: f64 = label.angle;
-                    if angle >= 180.0 {
-                        //TODO: dont know why this is possible
+                    if angle > 180.0 {
                         angle -= 180.0;
                     }
                     return Some(vec![PlotItem::Text(
@@ -241,6 +242,7 @@ where
                             effects.font_size.0,
                             effects.font.as_str(),
                             effects.justify,
+                            true,
                         ),
                     )]);
                 }
@@ -249,7 +251,6 @@ where
                     let pos: Array1<f64> = label.at.clone();
                     let mut angle: f64 = label.angle;
                     if angle >= 180.0 {
-                        //TODO: dont know why this is possible
                         angle -= 180.0;
                     }
                     return Some(vec![PlotItem::Text(
@@ -262,6 +263,7 @@ where
                             effects.font_size.0,
                             effects.font.as_str(),
                             effects.justify,
+                            false,
                         ),
                     )]);
                 }
@@ -425,7 +427,7 @@ where
                                             ),
                                         ));
 
-                                        if lib.pin_numbers_show {
+                                        if !lib.power && lib.pin_numbers_show {
                                             let npos = if pin.angle == 0.0 || pin.angle == 180.0 {
                                                 arr1(&[
                                                     pin.at[0]
@@ -450,26 +452,27 @@ where
                                                 effects
                                             ));
                                         }
-
-                                        if pin.name.0 != "~" && !lib.pin_names_show {
+                                        if !lib.power && pin.name.0 != "~" && lib.pin_names_show {
                                             let name_pos = arr1(&[
                                                 pin.at[0]
                                                     + pin.angle.to_radians().cos()
-                                                        * (pin.length + lib.pin_names_offset * 4.0),
+                                                        * (pin.length + lib.pin_names_offset * 8.0),
                                                 pin.at[1]
                                                     + pin.angle.to_radians().sin()
-                                                        * (pin.length + lib.pin_names_offset * 4.0),
+                                                        * (pin.length + lib.pin_names_offset * 8.0),
                                             ]);
+                                            let effects = self.theme.effects("pin_name").unwrap();
                                             items.push(PlotItem::Text(
                                                 99,
                                                 Text::new(
                                                     Shape::transform(symbol, &name_pos),
-                                                    0.0,
+                                                    pin.angle,
                                                     pin.name.0.clone(),
-                                                    (1.0, 0.0, 0.0, 1.0),
-                                                    1.25,
-                                                    "osifont",
+                                                    effects.color,
+                                                    effects.font_size.0,
+                                                    &effects.font,
                                                     vec![String::from("center")],
+                                                    false,
                                                 ),
                                             ));
                                         }
@@ -535,11 +538,34 @@ mod tests {
     use elektron_sexp::Schema;
     use std::path::Path;
 
-    /* #[test]
-    fn bom() {
-        let doc = Schema::load("samples/files/summe/summe.kicad_sch").unwrap();
-        doc.plot("/tmp/summe.svg", 1.0, true, "kicad_2000").unwrap();
+    use crate::plot_schema;
+
+    #[test]
+    fn plt_dco() {
+        let doc = Schema::load("files/dco.kicad_sch").unwrap();
+        plot_schema(&doc, "/tmp/dco.svg", 3.0, false, "kicad_2000").unwrap();
+        assert!(Path::new("/tmp/dco.svg").exists());
+        assert!(Path::new("/tmp/dco.svg").metadata().unwrap().len() > 0);
+    }
+    #[test]
+    fn plt_dco_mono() {
+        let doc = Schema::load("files/dco.kicad_sch").unwrap();
+        plot_schema(&doc, "/tmp/dco-mono.svg", 3.0, false, "mono").unwrap();
+        assert!(Path::new("/tmp/dco-mono.svg").exists());
+        assert!(Path::new("/tmp/dco-mono.svg").metadata().unwrap().len() > 0);
+    }
+    #[test]
+    fn plt_summe() {
+        let doc = Schema::load("files/summe.kicad_sch").unwrap();
+        plot_schema(&doc, "/tmp/summe.svg", 3.0, true, "kicad_2000").unwrap();
         assert!(Path::new("/tmp/summe.svg").exists());
         assert!(Path::new("/tmp/summe.svg").metadata().unwrap().len() > 0);
-    } */
+    }
+    #[test]
+    fn plt_summe_mono() {
+        let doc = Schema::load("files/summe.kicad_sch").unwrap();
+        plot_schema(&doc, "/tmp/summe-mono.svg", 3.0, true, "mono").unwrap();
+        assert!(Path::new("/tmp/summe-mono.svg").exists());
+        assert!(Path::new("/tmp/summe-mono.svg").metadata().unwrap().len() > 0);
+    }
 }

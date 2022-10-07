@@ -124,12 +124,14 @@ impl Theme {
             (pin (stroke (width 0.254) (type default) (color 0.5176470588235295 0 0 1)))
             (border_stroke (stroke (width 0.254) (type default) (color 0 0 0 1)))
             (label (effects (font (size 1.27 1.27))))
+            (global_label (effects (font (size 1.27 1.27))))
             (property (effects (font (size 1.27 1.27))))
-            (pin_number (effects (font (size 1.27 1.27))))
+            (pin_number (effects (font (size 0.8 0.8))))
+            (pin_name (effects (font (size 1.27 1.27) (color 0 0 0 1))))
             (text (effects (font (size 5.0 5.0))))
-            (border_effects (effects (font (size 2.54 2.54))))
-            (subtitle_effects (effects (font (size 2.54 2.54))))
-            (title_effects (effects (font (size 5.0 5.0))))
+            (border_effects (effects (font (size 2.54 2.54)) (justify left)))
+            (subtitle_effects (effects (font (size 2.54 2.54)) (justify left)))
+            (title_effects (effects (font (size 2.54 2.54) bold) (justify left)))
             (footprint (effects (font (size 5.0 5.0))))
             
             (Edge.Cuts (stroke (width 0.254) (type default) (color 0.8157 0.8235 0.8039 1)))
@@ -143,6 +145,7 @@ impl Theme {
             (B.Fab (stroke (width 0.254) (type default) (color 0.34509803921568627 0.36470588235294116 0.5176470588235295 1)))
             (B.SilkS (stroke (width 0.254) (type default) (color 0.9098039215686274 0.6980392156862745 0.6549019607843137 1)))
             (Cmts.User (stroke (width 0.254) (type default) (color 0.34901960784313724 0.5803921568627451 0.8627450980392157 1)))
+
             (background (color 1 1 0.7607843137254902 1)
             (outline (color 0.5176470588235295 0 0 1)
             "#;
@@ -158,12 +161,17 @@ impl Theme {
             (pin (stroke (width 0.254) (type default) (color 0 0 0 1)))
             (border_stroke (stroke (width 0.254) (type default) (color 0 0 0 1)))
             (label (effects (font (size 1.27 1.27))))
+            (global_label (effects (font (size 1.27 1.27))))
             (property (effects (font (size 1.27 1.27))))
-            (pin_number (effects (font (size 1.27 1.27))))
+            (pin_number (effects (font (size 0.8 0.8))))
+            (pin_name (effects (font (size 1.27 1.27) (color 0 0 0 1))))
             (text (effects (font (size 5.0 5.0))))
             (border_effects (effects (font (size 2.54 2.54))))
             (subtitle_effects (effects (font (size 2.54 2.54))))
             (title_effects (effects (font (size 5.0 5.0))))
+
+            (background (color 0.8 0.8 0.8 1)
+            (outline (color 0 0 0 1)
             "#;
         Theme::new(content.to_string())
     }
