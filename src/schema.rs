@@ -292,10 +292,10 @@ where
                                 }
                             }
                             effects.justify = justify;
-                            let prop_angle = if symbol.angle - property.angle >= 180.0 {
-                                symbol.angle - property.angle - 180.0
+                            let prop_angle = if (symbol.angle - property.angle).abs() >= 360.0 {
+                                (symbol.angle - property.angle).abs() - 360.0
                             } else {
-                                symbol.angle - property.angle
+                                (symbol.angle - property.angle).abs()
                             };
                             if !effects.hide {
                                 items.push(text!(

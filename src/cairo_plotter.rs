@@ -555,7 +555,7 @@ impl<'a> Plotter for CairoPlotter<'a> {
                             let mut y = text.pos[1];
 
                             if !text.label {
-                                if text.angle == 0.0 || text.angle == 360.0 {
+                                if text.angle == 0.0 || text.angle == 180.0 {
                                     if text.align.contains(&String::from("right")) {
                                         x -= outline.0 as f64;
                                     } else if !text.align.contains(&String::from("left")) {
@@ -581,7 +581,7 @@ impl<'a> Plotter for CairoPlotter<'a> {
                                     println!("text angle is: {} ({})", text.angle, text.text);
                                 }
                                 context.move_to(x, y);
-                                let angle = if text.angle > 180.0 {
+                                let angle = if text.angle >= 180.0 {
                                     text.angle - 180.0 
                                 } else { text.angle };
                                 context.rotate(-angle * std::f64::consts::PI / 180.0);
