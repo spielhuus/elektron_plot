@@ -75,9 +75,12 @@ where
                                         &text.effects,
                                         &self.theme.effects("footprint").unwrap(),
                                     );
+                                    let angle = if let Some(angle) = text.angle {
+                                        angle 
+                                    } else { 0.0 };
                                     graphics.push(text!(
                                         Shape::transform(footprint, &text.at),
-                                        text.angle,
+                                        angle,
                                         text.value.clone(),
                                         effects
                                     ));
