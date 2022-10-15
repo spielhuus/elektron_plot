@@ -10,6 +10,7 @@ use std::io::Write;
 
 pub use self::cairo_plotter::{CairoPlotter, ImageType, PlotItem, Plotter};
 pub use self::theme::{Theme, Themer};
+use elektron_spice::{Circuit, Netlist};
 pub use error::Error;
 
 macro_rules! text {
@@ -43,7 +44,7 @@ fn check_directory(filename: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn plot_schema(schema: &Schema, filename: &str, scale: f64, border: bool, theme: &str) -> Result<(), Error> {
+pub fn plot_schema(schema: &Schema, filename: &str, scale: f64, border: bool, theme: &str, netlist: Option<Netlist>) -> Result<(), Error> {
     let image_type = if filename.ends_with(".svg") {
         ImageType::Svg
     } else if filename.ends_with(".png") {
@@ -59,7 +60,7 @@ pub fn plot_schema(schema: &Schema, filename: &str, scale: f64, border: bool, th
 
     for i in 0..schema.pages() { //TODO: iterate page directly
         use self::schema::PlotIterator;
-        let iter = schema.iter(i)?.plot(schema, &schema.pages[i].title_block, schema.pages[i].paper_size.clone().into(), &theme, border).flatten().collect(); //TODO: plot all, remove clone
+        let iter = schema.iter(i)?.plot(schema, &schema.pages[i].title_block, schema.pages[i].paper_size.clone().into(), &theme, border, &netlist).flatten().collect(); //TODO: plot all, remove clone
         let mut cairo = CairoPlotter::new(&iter);
         check_directory(filename)?;
         let out: Box<dyn Write> = Box::new(File::create(filename)?);

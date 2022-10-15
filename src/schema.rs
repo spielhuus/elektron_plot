@@ -1,3 +1,4 @@
+use elektron_spice::{Netlist, Point};
 use ndarray::{arr1, arr2, Array1, Array2};
 
 use super::border::draw_border;
@@ -5,7 +6,7 @@ use super::cairo_plotter::{Circle, Line, LineCap, PlotItem, Text};
 use super::theme::{Theme, Themer, ThemerMerge};
 use crate::cairo_plotter::{Arc, Polyline, Rectangle};
 use crate::text;
-use elektron_sexp::{Graph, SchemaElement, TitleBlock, Schema, Shape, Transform};
+use elektron_sexp::{Graph, SchemaElement, TitleBlock, Schema, Shape, Transform, Symbol, Pin};
 
 macro_rules! get_effects {
     ($orig:expr, $theme:expr) => {
@@ -24,6 +25,7 @@ pub struct SchemaPlot<'a, I> {
     schema: &'a Schema,
     title_block: &'a Option<TitleBlock>,
     paper_size: (f64, f64),
+    netlist: &'a Option<Netlist<'a>>,
 }
 
 impl<'a, I> Iterator for SchemaPlot<'a, I>
@@ -416,6 +418,7 @@ where
                                                     + pin.angle.to_radians().sin() * pin.length,
                                             ],
                                         ]);
+
                                         items.push(PlotItem::Line(
                                             10,
                                             Line::new(
@@ -428,25 +431,32 @@ where
                                         ));
 
                                         if !lib.power && lib.pin_numbers_show {
-                                            let npos = if pin.angle == 0.0 || pin.angle == 180.0 {
-                                                arr1(&[
-                                                    pin.at[0]
-                                                        + pin.angle.to_radians().cos() * pin.length
-                                                            / 2.0,
-                                                    pin.at[1] - 1.0,
+                                            let orientation = pin_position(symbol, pin);
+                                            let pos = if orientation == vec![1, 0, 0, 0] {
+                                                Shape::transform(symbol, &pin.at) + arr1(&[
+                                                    pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                    -1.0,
                                                 ])
-                                            } else {
-                                                arr1(&[
-                                                    pin.at[0] - 1.0,
-                                                    pin.at[1]
-                                                        + pin.angle.to_radians().sin() * pin.length
-                                                            / 2.0,
+                                            } else if orientation == vec![0, 1, 0, 0] {
+                                                Shape::transform(symbol, &pin.at) + arr1(&[
+                                                    1.0,
+                                                    pin.angle.to_radians().cos() * pin.length / 2.0,
                                                 ])
-                                            };
+                                            } else if orientation == vec![0, 0, 1, 0] {
+                                                Shape::transform(symbol, &pin.at) + arr1(&[
+                                                    pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                    -1.0
+                                                ])
+                                            } else if orientation == vec![0, 0, 0, 1] {
+                                                Shape::transform(symbol, &pin.at) + arr1(&[
+                                                    1.0,
+                                                    -pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                ])
+                                            } else { panic!("unknown pin position: {:?}", orientation)};
 
                                             let effects = self.theme.effects("pin_number").unwrap();
                                             items.push(text!(
-                                                Shape::transform(symbol, &npos),
+                                                pos,
                                                 0.0,
                                                 pin.number.0.clone(),
                                                 effects
@@ -475,6 +485,42 @@ where
                                                     false,
                                                 ),
                                             ));
+                                        }
+                                        // draw the netlist name
+                                        if !lib.power {
+                                            if let Some(netlist) = self.netlist {
+                                                let orientation = pin_position(symbol, pin);
+                                                let pos = if orientation == vec![1, 0, 0, 0] {
+                                                    Shape::transform(symbol, &pin.at) + arr1(&[
+                                                        pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                        1.0,
+                                                    ])
+                                                } else if orientation == vec![0, 1, 0, 0] {
+                                                    Shape::transform(symbol, &pin.at) + arr1(&[
+                                                        -1.0,
+                                                        pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                    ])
+                                                } else if orientation == vec![0, 0, 1, 0] {
+                                                    Shape::transform(symbol, &pin.at) + arr1(&[
+                                                        pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                        1.0
+                                                    ])
+                                                } else if orientation == vec![0, 0, 0, 1] {
+                                                    Shape::transform(symbol, &pin.at) + arr1(&[
+                                                        -1.0,
+                                                        -pin.angle.to_radians().cos() * pin.length / 2.0,
+                                                    ])
+                                                } else { panic!("unknown pin position: {:?}", orientation)};
+
+                                                let effects = self.theme.effects("pin_number").unwrap();
+                                                let pin_pos = Shape::transform(symbol, &pin.at);
+                                                items.push(text!(
+                                                    pos,
+                                                    0.0,
+                                                    netlist.node_name(&Point::new(pin_pos[0], pin_pos[1])).unwrap_or_else(|| String::from("NaN")),
+                                                    effects
+                                                ));
+                                            }
                                         }
                                     }
                                 }
@@ -513,8 +559,31 @@ where
     }
 }
 
+/// get the pin position
+/// returns an array containing the number of pins:
+///   3
+/// 0   2
+///   1
+fn pin_position(symbol: &Symbol, pin: &Pin) -> Vec<usize> {
+    let mut position: Vec<usize> = vec![0; 4];
+    let symbol_shift: usize = (symbol.angle / 90.0).round() as usize;
+
+    let lib_pos: usize = (pin.angle / 90.0).round() as usize;
+    position[lib_pos] += 1;
+
+    position.rotate_right(symbol_shift);
+    if let Some(mirror) = &symbol.mirror {
+        if mirror == "x" {
+            position = vec![position[0], position[3], position[2], position[1]];
+        } else if mirror == "y" {
+            position = vec![position[2], position[1], position[0], position[3]];
+        }
+    }
+    position
+}
+
 impl<'a, I> SchemaPlot<'a, I> {
-    pub fn new(iter: I, schema: &'a Schema, title_block: &'a Option<TitleBlock>, paper_size: (f64, f64), theme: &'a Theme, border: bool) -> Self {
+    pub fn new(iter: I, schema: &'a Schema, title_block: &'a Option<TitleBlock>, paper_size: (f64, f64), theme: &'a Theme, border: bool, netlist: &'a Option<Netlist<'a>>) -> Self {
         Self {
             iter,
             theme,
@@ -522,13 +591,14 @@ impl<'a, I> SchemaPlot<'a, I> {
             schema,
             title_block,
             paper_size,
+            netlist,
         }
     }
 }
 
 pub trait PlotIterator<T>: Iterator<Item = T> + Sized {
-    fn plot<'a>(self, schema: &'a Schema, title_block: &'a Option<TitleBlock>, paper_size: (f64, f64), theme: &'a Theme, border: bool) -> SchemaPlot<'a, Self> {
-        SchemaPlot::new(self, schema, title_block, paper_size, theme, border)
+    fn plot<'a>(self, schema: &'a Schema, title_block: &'a Option<TitleBlock>, paper_size: (f64, f64), theme: &'a Theme, border: bool, netlist: &'a Option<Netlist<'a>>) -> SchemaPlot<'a, Self> {
+        SchemaPlot::new(self, schema, title_block, paper_size, theme, border, netlist)
     }
 }
 impl<T, I: Iterator<Item = T>> PlotIterator<T> for I {}
@@ -536,6 +606,7 @@ impl<T, I: Iterator<Item = T>> PlotIterator<T> for I {}
 #[cfg(test)]
 mod tests {
     use elektron_sexp::Schema;
+    use elektron_spice::Netlist;
     use std::path::Path;
 
     use crate::plot_schema;
@@ -543,29 +614,37 @@ mod tests {
     #[test]
     fn plt_dco() {
         let doc = Schema::load("files/dco.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/dco.svg", 3.0, false, "kicad_2000").unwrap();
+        plot_schema(&doc, "/tmp/dco.svg", 3.0, false, "kicad_2000", None).unwrap();
         assert!(Path::new("/tmp/dco.svg").exists());
         assert!(Path::new("/tmp/dco.svg").metadata().unwrap().len() > 0);
     }
     #[test]
     fn plt_dco_mono() {
         let doc = Schema::load("files/dco.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/dco-mono.svg", 3.0, false, "mono").unwrap();
+        plot_schema(&doc, "/tmp/dco-mono.svg", 3.0, false, "mono", None).unwrap();
         assert!(Path::new("/tmp/dco-mono.svg").exists());
         assert!(Path::new("/tmp/dco-mono.svg").metadata().unwrap().len() > 0);
     }
     #[test]
     fn plt_summe() {
         let doc = Schema::load("files/summe.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/summe.svg", 3.0, true, "kicad_2000").unwrap();
+        plot_schema(&doc, "/tmp/summe.svg", 3.0, true, "kicad_2000", None).unwrap();
         assert!(Path::new("/tmp/summe.svg").exists());
         assert!(Path::new("/tmp/summe.svg").metadata().unwrap().len() > 0);
     }
     #[test]
     fn plt_summe_mono() {
         let doc = Schema::load("files/summe.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/summe-mono.svg", 3.0, true, "mono").unwrap();
+        plot_schema(&doc, "/tmp/summe-mono.svg", 3.0, true, "mono", None).unwrap();
         assert!(Path::new("/tmp/summe-mono.svg").exists());
         assert!(Path::new("/tmp/summe-mono.svg").metadata().unwrap().len() > 0);
+    }
+    #[test]
+    fn plt_summe_netlist() {
+        let doc = Schema::load("files/summe.kicad_sch").unwrap();
+        let netlist = Netlist::from(&doc).unwrap();
+        plot_schema(&doc, "/tmp/summe-netlist.svg", 3.0, true, "mono", Some(netlist)).unwrap();
+        assert!(Path::new("/tmp/summe-netlist.svg").exists());
+        assert!(Path::new("/tmp/summe-netlist.svg").metadata().unwrap().len() > 0);
     }
 }

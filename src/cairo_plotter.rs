@@ -639,7 +639,6 @@ impl<'a> Plotter for CairoPlotter<'a> {
 mod tests {
     use crate::cairo_plotter::rgba_color;
 
-
     #[test]
     fn convert_color() {
         assert_eq!("#000000FF", rgba_color((0.0, 0.0, 0.0, 1.0)));
