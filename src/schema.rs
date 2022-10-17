@@ -609,33 +609,33 @@ mod tests {
     use elektron_spice::Netlist;
     use std::path::Path;
 
-    use crate::plot_schema;
+    use crate::{plot_schema, get_plots};
 
     #[test]
     fn plt_dco() {
         let doc = Schema::load("files/dco.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/dco.svg", 3.0, false, "kicad_2000", None).unwrap();
+        plot_schema(&doc, Some("/tmp/dco.svg"), 3.0, false, "kicad_2000", None, Some("svg")).unwrap();
         assert!(Path::new("/tmp/dco.svg").exists());
         assert!(Path::new("/tmp/dco.svg").metadata().unwrap().len() > 0);
     }
     #[test]
     fn plt_dco_mono() {
         let doc = Schema::load("files/dco.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/dco-mono.svg", 3.0, false, "mono", None).unwrap();
+        plot_schema(&doc, Some("/tmp/dco-mono.svg"), 3.0, false, "mono", None, Some("svg")).unwrap();
         assert!(Path::new("/tmp/dco-mono.svg").exists());
         assert!(Path::new("/tmp/dco-mono.svg").metadata().unwrap().len() > 0);
     }
     #[test]
     fn plt_summe() {
         let doc = Schema::load("files/summe.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/summe.svg", 3.0, true, "kicad_2000", None).unwrap();
+        plot_schema(&doc, Some("/tmp/summe.svg"), 3.0, true, "kicad_2000", None, Some("svg")).unwrap();
         assert!(Path::new("/tmp/summe.svg").exists());
         assert!(Path::new("/tmp/summe.svg").metadata().unwrap().len() > 0);
     }
     #[test]
     fn plt_summe_mono() {
         let doc = Schema::load("files/summe.kicad_sch").unwrap();
-        plot_schema(&doc, "/tmp/summe-mono.svg", 3.0, true, "mono", None).unwrap();
+        plot_schema(&doc, Some("/tmp/summe-mono.svg"), 3.0, true, "mono", None, Some("svg")).unwrap();
         assert!(Path::new("/tmp/summe-mono.svg").exists());
         assert!(Path::new("/tmp/summe-mono.svg").metadata().unwrap().len() > 0);
     }
@@ -643,8 +643,15 @@ mod tests {
     fn plt_summe_netlist() {
         let doc = Schema::load("files/summe.kicad_sch").unwrap();
         let netlist = Netlist::from(&doc).unwrap();
-        plot_schema(&doc, "/tmp/summe-netlist.svg", 3.0, true, "mono", Some(netlist)).unwrap();
+        plot_schema(&doc, Some("/tmp/summe-netlist.svg"), 3.0, true, "mono", Some(netlist), Some("svg")).unwrap();
         assert!(Path::new("/tmp/summe-netlist.svg").exists());
         assert!(Path::new("/tmp/summe-netlist.svg").metadata().unwrap().len() > 0);
+    }
+    #[test]
+    fn plt_stored() {
+        let doc = Schema::load("files/summe.kicad_sch").unwrap();
+        let netlist = Netlist::from(&doc).unwrap();
+        plot_schema(&doc, None, 3.0, true, "mono", Some(netlist), Some("svg")).unwrap();
+        assert_eq!(1, get_plots().len());
     }
 }

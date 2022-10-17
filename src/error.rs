@@ -22,6 +22,8 @@ pub enum Error {
     PropertyNotFound(String, String),
     #[error("Library \"{0}\" not found in schema")]
     LinraryNotFound(String),
+    #[error("Unknown image type \"{0}\", must be jpg, png or pdf.")]
+    UnknownImageType(String),
 }
 
 impl std::convert::From<std::io::Error> for Error {

@@ -1,6 +1,6 @@
 [package]
 name = "elektron_plot"
-version = "0.1.21"
+version = "0.1.22"
 edition = "2021"
 description = "plot elektron schema and pcb data."
 license = "MIT OR Apache-2.0"
@@ -21,5 +21,6 @@ svg = "0.10.0"
 pdf = "0.7.2"
 cairo-rs = { version = "0.15.12", features = ["svg", "png", "pdf"] }
 pangocairo = "0.15.1"
+rand = "0.8.5"
 elektron_sexp = "0.1"
 elektron_spice = "0.1"
