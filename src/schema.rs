@@ -609,7 +609,7 @@ mod tests {
     use elektron_spice::Netlist;
     use std::path::Path;
 
-    use crate::{plot_schema, get_plots};
+    use crate::{plot_schema, plot_schema_buffer, get_plots, store_plot};
 
     #[test]
     fn plt_dco() {
@@ -651,7 +651,8 @@ mod tests {
     fn plt_stored() {
         let doc = Schema::load("files/summe.kicad_sch").unwrap();
         let netlist = Netlist::from(&doc).unwrap();
-        plot_schema(&doc, None, 3.0, true, "mono", Some(netlist), Some("svg")).unwrap();
+        assert_eq!(0, get_plots().len());
+        plot_schema_buffer(&doc, &store_plot, 3.0, true, "mono", Some(netlist), "svg").unwrap();
         assert_eq!(1, get_plots().len());
     }
 }

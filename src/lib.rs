@@ -152,6 +152,63 @@ pub fn plot_schema(
     Ok(())
 }
 
+pub fn plot_schema_buffer(
+    schema: &Schema,
+    callback: &dyn Fn(Vec<u8>),
+    scale: f64,
+    border: bool,
+    theme: &str,
+    netlist: Option<Netlist>,
+    image_type: &str,
+) -> Result<(), Error> {
+    let image_type = if image_type == "pdf" {
+        Ok(ImageType::Pdf)
+    } else if image_type == "png" {
+        Ok(ImageType::Png)
+    } else if image_type == "svg" {
+        Ok(ImageType::Svg)
+    } else {
+        Err(Error::UnknownImageType(image_type.to_string()))
+    }?;
+
+    let theme = if theme == "mono" {
+        Theme::mono()
+    } else {
+        Theme::kicad_2000()
+    };
+
+    for i in 0..schema.pages() {
+        //TODO: iterate page directly
+        let mut rng = rand::thread_rng();
+        let num: u32 = rng.gen();
+        let filename = String::new() + temp_dir().to_str().unwrap() + "/" + &num.to_string(); //TODO: add
+                                                                                              //extension
+
+        use self::schema::PlotIterator;
+        let iter = schema
+            .iter(i)?
+            .plot(
+                schema,
+                &schema.pages[i].title_block,
+                schema.pages[i].paper_size.clone().into(),
+                &theme,
+                border,
+                &netlist,
+            )
+            .flatten()
+            .collect(); //TODO: plot all, remove clone
+        let mut cairo = CairoPlotter::new(&iter);
+        let out: Box<dyn Write> = Box::new(File::create(&filename)?);
+        cairo.plot(out, border, scale, &image_type)?;
+
+        let mut f = File::open(&filename).expect("no file found");
+        let metadata = fs::metadata(&filename).expect("unable to read metadata");
+        let mut buffer = vec![0; metadata.len() as usize];
+        f.read_exact(&mut buffer).expect("buffer overflow");
+        callback(buffer);
+    }
+    Ok(())
+}
 ///plot the pcb.
 pub fn plot_pcb(
     pcb: &Pcb,
