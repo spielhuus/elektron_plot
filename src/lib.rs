@@ -154,13 +154,12 @@ pub fn plot_schema(
 
 pub fn plot_schema_buffer(
     schema: &Schema,
-    callback: &dyn Fn(Vec<u8>),
     scale: f64,
     border: bool,
     theme: &str,
     netlist: Option<Netlist>,
     image_type: &str,
-) -> Result<(), Error> {
+) -> Result<Vec<Vec<u8>>, Error> {
     let image_type = if image_type == "pdf" {
         Ok(ImageType::Pdf)
     } else if image_type == "png" {
@@ -177,6 +176,7 @@ pub fn plot_schema_buffer(
         Theme::kicad_2000()
     };
 
+    let mut buffers = Vec::new();
     for i in 0..schema.pages() {
         //TODO: iterate page directly
         let mut rng = rand::thread_rng();
@@ -205,9 +205,9 @@ pub fn plot_schema_buffer(
         let metadata = fs::metadata(&filename).expect("unable to read metadata");
         let mut buffer = vec![0; metadata.len() as usize];
         f.read_exact(&mut buffer).expect("buffer overflow");
-        callback(buffer);
+        buffers.push(buffer);
     }
-    Ok(())
+    Ok(buffers)
 }
 ///plot the pcb.
 pub fn plot_pcb(

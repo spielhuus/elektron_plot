@@ -647,12 +647,4 @@ mod tests {
         assert!(Path::new("/tmp/summe-netlist.svg").exists());
         assert!(Path::new("/tmp/summe-netlist.svg").metadata().unwrap().len() > 0);
     }
-    #[test]
-    fn plt_stored() {
-        let doc = Schema::load("files/summe.kicad_sch").unwrap();
-        let netlist = Netlist::from(&doc).unwrap();
-        assert_eq!(0, get_plots().len());
-        plot_schema_buffer(&doc, &store_plot, 3.0, true, "mono", Some(netlist), "svg").unwrap();
-        assert_eq!(1, get_plots().len());
-    }
 }
